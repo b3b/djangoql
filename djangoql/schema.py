@@ -225,7 +225,7 @@ class DjangoQLSchema(object):
     exclude = ()  # models to exclude from introspection
     suggest_options = None
 
-    def __init__(self, model):
+    def __init__(self, model, user=None):
         if not inspect.isclass(model) or not issubclass(model, models.Model):
             raise DjangoQLSchemaError(
                 'Schema must be initialized with a subclass of Django model'
@@ -245,6 +245,7 @@ class DjangoQLSchema(object):
         self._models = None
         if self.suggest_options is None:
             self.suggest_options = {}
+        self.user = user
 
     def excluded(self, model):
         return model in self.exclude or \
@@ -335,6 +336,9 @@ class DjangoQLSchema(object):
             return DateField
         return DjangoQLField
 
+    def get_saved_queries(self, model, user):
+        return []
+
     def as_dict(self):
         models = {}
         for model_label, fields in self.models.items():
@@ -344,6 +348,8 @@ class DjangoQLSchema(object):
         return {
             'current_model': self.model_label(self.current_model),
             'models': models,
+            'saved_queries':  self.get_saved_queries(self.current_model,
+                                                     self.user)
         }
 
     def resolve_name(self, name):

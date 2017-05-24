@@ -12,6 +12,20 @@ from djangoql.schema import DjangoQLSchema
 class UserQLSchema(DjangoQLSchema):
     include = (User, Group)
 
+    def get_saved_queries(self, model, user):
+        generated_queries = [{'label': "department {}".format(n),
+                              'q': 'is_active = True and ' +
+                              'groups.name = "department{}"'.format(n)}
+                             for n in range(1, 33)]
+        return [
+            {'q': 'first_name in ("Alice", "Bob")'},
+            {'label': 'new staff 2017', 'q':
+             'is_staff = True and date_joined >= "2017-01-01" ' +
+             'and date_joined < "2018-01-01"'},
+            {'label': 'departments',
+             'q': 'is_active = True and groups.name ~ "department"'},
+        ] + generated_queries
+
 
 @require_GET
 def completion_demo(request):

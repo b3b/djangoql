@@ -98,6 +98,10 @@ class DjangoQLSchemaTest(TestCase):
         ])
         self.assertListEqual(list(custom.keys()), ['name', 'is_published'])
 
+    def test_get_saved_queries(self):
+        self.assertEqual(DjangoQLSchema(Book).as_dict()['saved_queries'], [])
+
+
     def test_custom_search(self):
         custom = BookCustomSearchSchema(Book).as_dict()['models']['core.book']
         self.assertListEqual(list(custom.keys()), ['written_in_year'])

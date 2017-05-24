@@ -87,6 +87,7 @@
   lexer.addRule(/<=/, function (l) { return token('LESS_EQUAL', l); });
   lexer.addRule(/~/, function (l) { return token('CONTAINS', l); });
   lexer.addRule(/!~/, function (l) { return token('NOT_CONTAINS', l); });
+  lexer.addRule(/^\* */, function (l) { return token('STAR_START', l); });
   lexer.lexAll = function () {
     var match;
     var result = [];
@@ -98,15 +99,17 @@
     return result;
   };
 
-  function suggestion(text, snippetBefore, snippetAfter) {
+  function suggestion(text, snippetBefore, snippetAfter, mainText) {
     // text is being displayed in completion box and pasted when you hit Enter.
     // snippetBefore is an optional extra text to be pasted before main text.
     // snippetAfter is an optional text to be pasted after. It may also include
     // "|" symbol to designate desired cursor position after paste.
+    // mainText is an optional main text to paste, in case it differs from the displayed text.
     return {
       text: text,
       snippetBefore: snippetBefore || '',
-      snippetAfter: snippetAfter || ''
+      snippetAfter: snippetAfter || '',
+      mainText: mainText === undefined ? text : mainText
     };
   }
 
@@ -120,6 +123,7 @@
 
     prefix: '',
     suggestions: [],
+    savedQueries: [],
     selected: null,
     valuesCaseSensitive: false,
     highlightCaseSensitive: true,
@@ -224,6 +228,7 @@
             data = JSON.parse(request.responseText);
             this.currentModel = data.current_model;
             this.models = data.models;
+            this.savedQueries = data.saved_queries;
           } else {
             onLoadError();
           }
@@ -239,6 +244,7 @@
       } else if (this.isObject(introspections)) {
         this.currentModel = introspections.current_model;
         this.models = introspections.models;
+        this.savedQueries = introspections.saved_queries;
       } else {
         this.logError(
             'introspections parameter is expected to be either URL or ' +
@@ -415,14 +421,20 @@
 
       var snippetAfterParts = this.suggestions[index].snippetAfter.split('|');
       var textToPaste = this.suggestions[index].snippetBefore +
-          this.suggestions[index].text +
+          this.suggestions[index].mainText +
           snippetAfterParts.join('');
       var cursorPosAfter = textBefore.length + textToPaste.length;
       if (snippetAfterParts.length > 1) {
         cursorPosAfter -= snippetAfterParts[1].length;
       }
 
-      this.textarea.value = textBefore + textToPaste + textAfter;
+      if (this.savedQueriesMode) {
+        // saved queries replace the entire text
+        this.textarea.value = textToPaste;
+      } else {
+        this.textarea.value = textBefore + textToPaste + textAfter;
+      }
+
       this.textarea.focus();
       this.textarea.setSelectionRange(cursorPosAfter, cursorPosAfter);
       this.selected = null;
@@ -567,6 +579,8 @@
       var lastToken = null;
       var nextToLastToken = null;
       var tokens = this.lexer.setInput(text.slice(0, cursorPos)).lexAll();
+      var firstToken = tokens[0];
+
       if (tokens.length && tokens[tokens.length - 1].end >= cursorPos) {
         // if cursor is positioned on the last token then remove it.
         // We are only interested in tokens preceding current.
@@ -593,7 +607,11 @@
         prefix = '';
       }
 
-      if (prefix === ')' && !whitespace) {
+      if (firstToken && firstToken.name === 'STAR_START') {
+        prefix = text.slice(firstToken.end, cursorPos);
+        scope = '*';
+        model = this.currentModel;
+      } else if (prefix === ')' && !whitespace) {
         // Nothing to suggest right after right paren
       } else if (!lastToken ||
           (['AND', 'OR'].indexOf(lastToken.name) >= 0 && whitespace) ||
@@ -649,6 +667,10 @@
       return { prefix: prefix, scope: scope, model: model, field: field };
     },
 
+    setSavedQueriesMode: function(enabled) {
+      this.savedQueriesMode = enabled;
+    },
+
     generateSuggestions: function () {
       var input = this.textarea;
       var context;
@@ -687,6 +709,8 @@
       textBefore = input.value.slice(
           0, input.selectionStart - this.prefix.length);
       textAfter = input.value.slice(input.selectionStart);
+
+      this.setSavedQueriesMode(false);
 
       switch (context.scope) {
         case 'field':
@@ -767,6 +791,14 @@
             suggestion('or', '', ' ')
           ];
           break;
+
+        case '*':
+          this.setSavedQueriesMode(true);
+          var queries = this.savedQueries || [];
+          this.suggestions = queries.map(function (q) {
+            return suggestion(q.label || q.q, '', '', q.q);
+          });
+        break;
 
         default:
           this.prefix = '';

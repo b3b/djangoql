@@ -184,6 +184,19 @@ describe('DjangoQL completion', function () {
         expect(DjangoQL.lexer.lex()).to.eql(token('FLOAT_VALUE', num));
       });
     });
+
+    it('should recognize switch to saved queries mode', function () {
+      var examples = [
+        ['*', token('STAR_START', '*')],
+        ['*     ', token('STAR_START', '*     ')],
+        ['*auth', token('STAR_START', '*')],
+        ['auth*', token('NAME', 'auth')],
+      ];
+      examples.forEach(function (e) {
+        DjangoQL.lexer.setInput(e[0]);
+        expect(DjangoQL.lexer.lex()).to.eql(e[1]);
+      });
+    });
   });
 
   describe('.resolveName()', function () {
