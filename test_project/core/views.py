@@ -1,4 +1,5 @@
 import json
+from collections import OrderedDict
 
 from django.contrib.auth.models import Group, User
 from django.shortcuts import render_to_response
@@ -13,18 +14,20 @@ class UserQLSchema(DjangoQLSchema):
     include = (User, Group)
 
     def get_saved_queries(self, model, user):
-        generated_queries = [{'label': "department {}".format(n),
-                              'q': 'is_active = True and ' +
-                              'groups.name = "department{}"'.format(n)}
-                             for n in range(1, 33)]
-        return [
-            {'q': 'first_name in ("Alice", "Bob")'},
-            {'label': 'new staff 2017', 'q':
-             'is_staff = True and date_joined >= "2017-01-01" ' +
-             'and date_joined < "2018-01-01"'},
-            {'label': 'departments',
-             'q': 'is_active = True and groups.name ~ "department"'},
-        ] + generated_queries
+        queries = OrderedDict([
+            ('first_name in ("Alice", "Bob")', {
+                'q': 'first_name in ("Alice", "Bob")'}),
+            ('new staff 2017', {
+                'q': 'is_staff = True and date_joined >= "2017-01-01" ' +
+                'and date_joined < "2018-01-01"'}),
+            ('departments', {
+                'q': 'is_active = True and groups.name ~ "department"'})
+        ])
+        departments = [("department {}".format(n), {
+            'q': 'is_active = True and groups.name = "department{}"'.format(n)
+        }) for n in range(1, 33)]
+        queries.update(departments)
+        return queries
 
 
 @require_GET

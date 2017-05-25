@@ -794,9 +794,9 @@
 
         case '*':
           this.setSavedQueriesMode(true);
-          var queries = this.savedQueries || [];
-          this.suggestions = queries.map(function (q) {
-            return suggestion(q.label || q.q, '', '', q.q);
+          var queries = this.savedQueries || {};
+          this.suggestions = Object.keys(queries).map(function (label) {
+            return suggestion(label, '', '', queries[label].q);
           });
         break;
 

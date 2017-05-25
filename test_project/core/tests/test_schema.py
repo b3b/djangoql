@@ -7,6 +7,7 @@ from djangoql.parser import DjangoQLParser
 from djangoql.schema import DjangoQLSchema, IntField
 
 from ..models import Book
+from .factories import create_saved_query
 
 
 class ExcludeUserSchema(DjangoQLSchema):
@@ -71,7 +72,8 @@ class DjangoQLSchemaTest(TestCase):
             'auth.group',
             'auth.permission',
             'contenttypes.contenttype',
-            'core.book'
+            'core.book',
+            'djangoql.query'
         ])
 
     def test_include(self):
@@ -98,9 +100,17 @@ class DjangoQLSchemaTest(TestCase):
         ])
         self.assertListEqual(list(custom.keys()), ['name', 'is_published'])
 
-    def test_get_saved_queries(self):
-        self.assertEqual(DjangoQLSchema(Book).as_dict()['saved_queries'], [])
+    def test_empty_get_saved_queries(self):
+        self.assertEqual(DjangoQLSchema(Book).as_dict()['saved_queries'], {})
 
+    def test_get_saved_queries(self):
+        create_saved_query(model=Book, label='B', text='name ~ B')
+        create_saved_query(model=Book, label='A', text='name ~ A')
+        queries = DjangoQLSchema(Book).as_dict()['saved_queries']
+        self.assertEqual(queries, {
+            'A': {'q': 'name ~ A'},
+            'B': {'q': 'name ~ B'}
+        })
 
     def test_custom_search(self):
         custom = BookCustomSearchSchema(Book).as_dict()['models']['core.book']

@@ -1,13 +1,19 @@
+from __future__ import unicode_literals
+
 import json
 
 from django.conf.urls import url
+from django.contrib import admin
 from django.contrib import messages
 from django.core.exceptions import FieldError, ValidationError
 from django.http import HttpResponse
+from django.template.defaultfilters import truncatechars
+from django.utils.translation import ugettext_lazy as _
 from django.views.generic import TemplateView
 
 from .compat import text_type
 from .exceptions import DjangoQLError
+from .models import Query
 from .queryset import apply_search
 from .schema import DjangoQLSchema
 
@@ -73,8 +79,26 @@ class DjangoQLSearchMixin(object):
         return custom_urls + super(DjangoQLSearchMixin, self).get_urls()
 
     def introspect(self, request):
-        response = self.djangoql_schema(self.model).as_dict()
+        response = self.djangoql_schema(self.model,
+                                        user=request.user).as_dict()
         return HttpResponse(
             content=json.dumps(response, indent=2),
             content_type='application/json; charset=utf-8',
         )
+
+
+@admin.register(Query)
+class QueryAdmin(DjangoQLSearchMixin, admin.ModelAdmin):
+    list_display = ('label', 'short_text', 'model', 'user', 'is_private')
+    raw_id_fields = ('user',)
+    readonly_fields = ('edited',)
+    ordering = ('-edited',)
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super(QueryAdmin, self).get_form(request, obj, **kwargs)
+        form.base_fields['user'].initial = request.user
+        return form
+
+    def short_text(self, obj):
+        return truncatechars(obj.text, 50)
+    short_text.short_description = _('Query text')

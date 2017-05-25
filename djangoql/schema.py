@@ -10,6 +10,7 @@ from django.db.models import ManyToManyRel, ManyToOneRel
 from .ast import Comparison, Const, List, Logical, Name, Node
 from .compat import text_type
 from .exceptions import DjangoQLSchemaError
+from .models import Query
 
 
 class DjangoQLField(object):
@@ -337,7 +338,8 @@ class DjangoQLSchema(object):
         return DjangoQLField
 
     def get_saved_queries(self, model, user):
-        return []
+        return OrderedDict([(obj.label, {'q': obj.text})
+                            for obj in Query.objects.for_model(model, user)])
 
     def as_dict(self):
         models = {}
