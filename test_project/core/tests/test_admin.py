@@ -23,3 +23,22 @@ class DjangoQLAdminTest(TestCase):
         self.assertEqual('core.book', introspections['current_model'])
         for model in ('core.book', 'auth.user', 'auth.group'):
             self.assertIn(model, introspections['models'])
+
+    def test_save_djangoql_query(self):
+        url = reverse('admin:core_book_djangoql_save_query')
+        url += '?text=test'
+        # unauthorized request should be redirected to login page
+        response = self.client.get(url)
+        self.assertEqual(302, response.status_code)
+        self.assertIn('/admin/login/?next=', response.url)
+        self.assertTrue(self.client.login(**self.credentials))
+        # authorized request should be redirected to query creation page
+        response = self.client.get(url)
+        self.assertEqual(302, response.status_code)
+        self.assertIn('/admin/djangoql/query/add/', response.url)
+        parameters = response.url.split('?')[1]
+        # passed parameters should be preserved
+        self.assertIn('text=', parameters)
+        # _popup and model parameters should be added
+        self.assertIn('_popup=', parameters)
+        self.assertIn('model=', parameters)

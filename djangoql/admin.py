@@ -5,8 +5,10 @@ import json
 from django.conf.urls import url
 from django.contrib import admin
 from django.contrib import messages
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError, ValidationError
-from django.http import HttpResponse
+from django.core.urlresolvers import reverse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.template.defaultfilters import truncatechars
 from django.utils.translation import ugettext_lazy as _
 from django.views.generic import TemplateView
@@ -69,6 +71,14 @@ class DjangoQLSearchMixin(object):
                     ),
                 ),
                 url(
+                    r'^save-djangoql-query/$',
+                    self.admin_site.admin_view(self.save_djangoql_query),
+                    name='%s_%s_djangoql_save_query' % (
+                        self.model._meta.app_label,
+                        self.model._meta.model_name,
+                    ),
+                ),
+                url(
                     r'^djangoql-syntax/$',
                     TemplateView.as_view(
                         template_name=self.djangoql_syntax_help_template,
@@ -85,6 +95,19 @@ class DjangoQLSearchMixin(object):
             content=json.dumps(response, indent=2),
             content_type='application/json; charset=utf-8',
         )
+
+    def save_djangoql_query(self, request):
+        """
+        Redirect to the Query creation page
+        """
+        path = reverse('admin:djangoql_query_add')
+        params = request.GET.copy()
+        # prefill the model field
+        params['model'] = ContentType.objects.get_for_model(self.model).id
+        # popup mode is set by default
+        if '_popup' not in params:
+            params['_popup'] = '1'
+        return HttpResponseRedirect(path + "?" + params.urlencode())
 
 
 @admin.register(Query)
