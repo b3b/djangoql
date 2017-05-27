@@ -463,7 +463,10 @@ Template code, ``completion_demo.html``:
             // doesn't fit, and shrink back when text is removed. The purpose
             // of this is to see full search query without scrolling, could be
             // helpful for really long queries.
-            autoResize: true
+            autoResize: true,
+
+            // optional, show the saved queries switch icon.
+            savedQueriesIcon: true
           });
         });
       </script>

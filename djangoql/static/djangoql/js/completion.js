@@ -210,6 +210,18 @@
         });
         this.completion.appendChild(syntaxHelp);
       }
+
+      if (options.savedQueriesIcon === true) {
+        var container = document.createElement('div');
+        var icon = document.createElement('div');
+        container.className = 'djangoql-save-icon-container';
+        icon.className = 'djangoql-save-icon';
+        icon.addEventListener('click', this.switchSavedQueriesMode.bind(this));
+        container.appendChild(icon);
+        this.textarea.parentNode.insertBefore(container, this.textarea.nextSibling);
+        this.savedQueriesIcon = icon;
+      }
+      this.setSavedQueriesMode(false);
     },
 
     loadIntrospections: function (introspections) {
@@ -431,6 +443,7 @@
       if (this.savedQueriesMode) {
         // saved queries replace the entire text
         this.textarea.value = textToPaste;
+        this.suggestions = [];
       } else {
         this.textarea.value = textBefore + textToPaste + textAfter;
       }
@@ -667,8 +680,42 @@
       return { prefix: prefix, scope: scope, model: model, field: field };
     },
 
+    switchSavedQueriesMode: function() {
+      // Turn on/off saved-queries mode.
+      // Previously typed text is restored on mode turn off.
+      var value = '';
+      var selectionStart = 0;
+      var selectionEnd = 0;
+      if (this.savedQueriesMode) {
+        if (this.previousText) {
+          value = this.previousText.value;
+          selectionStart = this.previousText.selectionStart;
+          selectionEnd = this.previousText.selectionEnd;
+        }
+        this.previousText = {};
+      } else {
+        value = '*';
+        selectionStart = 1;
+        selectionEnd = 1;
+        this.previousText = {'value': this.textarea.value || '',
+                             'selectionStart': this.textarea.selectionStart || 0,
+                             'selectionEnd': this.textarea.selectionEnd || 0};
+      }
+      this.textarea.value = value;
+      this.textarea.setSelectionRange(selectionStart, selectionEnd);
+      if (this.textareaResize) {
+        this.textareaResize();
+      }
+      this.textarea.focus();
+      this.popupCompletion();
+    },
+
     setSavedQueriesMode: function(enabled) {
+      // savedQueriesMode property setter
       this.savedQueriesMode = enabled;
+      if (this.savedQueriesIcon) {
+        this.savedQueriesIcon.setAttribute('saved-search-mode', enabled);
+      }
     },
 
     generateSuggestions: function () {
@@ -811,6 +858,5 @@
         this.selected = null;
       }
     }
-
   };
 }));

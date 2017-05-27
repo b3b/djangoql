@@ -32,3 +32,38 @@
   border-top: solid 1px #ccc;
   font-size: inherit;
 }
+
+.djangoql-save-icon-container {
+  position: absolute;
+  display: inline-block;
+}
+
+.djangoql-save-icon {
+  position:absolute;
+  cursor: pointer;
+  margin-left: -1em;
+  padding: 0px;
+  font-size: 18px;
+}
+
+.djangoql-save-icon:after {
+  content: "\2605"; /* star symbol */
+}
+
+.djangoql-save-icon:hover {
+  color:#ffac33;
+}
+
+.djangoql-save-icon[enabled=true] {
+  color: #ffac33;
+}
+
+textarea[saved-search-mode] {
+  /* leave space for the djangoql-save-icon */
+  padding-right: 1.5em;
+}
+
+/* highlight saved-queries icon when in saved queries search mode */
+.djangoql-save-icon[saved-search-mode=true] {
+  color: #ffac33;
+}
