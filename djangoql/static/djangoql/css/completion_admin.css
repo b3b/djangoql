@@ -1,3 +1,46 @@
 #changelist #toolbar form textarea#searchbar {
   width: 80%;
 }
+
+.djangoql-save-dropdown {
+  position: absolute;
+  display: none;
+  z-index: 1;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 12em;
+  background-color: #f8f8f8;
+  box-shadow: 0px 3px 6px 0px rgba(0,0,0,0.5);
+  font-size: 13px;
+}
+
+.djangoql-save-icon-container:hover > .djangoql-save-dropdown {
+  display: inline-block;
+}
+
+a.djangoql-save-dropdown-item,
+a.djangoql-save-dropdown-item:focus,
+a.djangoql-save-dropdown-item:hover {
+  display: block;
+  padding: 5px 5px;
+  text-decoration: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 13px;
+}
+
+.djangoql-save-dropdown-item:hover {
+  background-color: #79aec8
+}
+
+/* add an icon to the dropdown item */
+.djangoql-save-dropdown-item:after {
+  position: absolute;
+  right: 5px;
+  content: attr(data-content);
+}
+
+.djangoql-save-dropdown-item:hover:after {
+  color: #dddddd;
+}
