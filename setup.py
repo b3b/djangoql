@@ -10,7 +10,7 @@ except ImportError:
 
 os.environ['PYTHONDONTWRITEBYTECODE'] = '1'
 
-packages = ['djangoql']
+packages = ['djangoql', 'djangoql.migrations']
 requires = ['ply>=3.8']
 
 setup(
